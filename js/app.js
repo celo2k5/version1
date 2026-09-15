@@ -107,14 +107,20 @@ function renderConnect() {
   $('connect-btn').textContent = connectedB58 ? short(connectedB58) : 'Connect';
 }
 
-// project token CA chip — placeholder until announced; set it from /admin
+// project token CA chip — baked-in default, overridable from /admin
+const DEFAULT_PROJECT_CA = 'EfBGNVKqPgmcgfWVUvsy4TXzd3FaTyMy7S9Jg9zsJxV1';
+
+function projectCa() {
+  return localStorage.getItem('v1-project-ca') || DEFAULT_PROJECT_CA;
+}
+
 function renderCaPill() {
-  const ca = localStorage.getItem('v1-project-ca');
+  const ca = projectCa();
   $('ca-pill').textContent = ca ? `CA · ${short(ca, 4)}` : 'CA · soon';
 }
 
 async function copyCa() {
-  const ca = localStorage.getItem('v1-project-ca');
+  const ca = projectCa();
   const pill = $('ca-pill');
   if (!ca) {
     pill.textContent = 'CA · not announced yet';

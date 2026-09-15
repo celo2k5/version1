@@ -128,12 +128,13 @@
   <h2>Project token</h2>
   <div class="card">
     <label>Contract address (CA) — shown in the site header</label>
-    <input id="project-ca" class="mono" placeholder="leave empty for the “CA · soon” placeholder">
+    <input id="project-ca" class="mono" placeholder="empty = built-in default (EfBG…JxV1)">
     <div class="row" style="margin-top:10px">
       <button class="small" id="save-ca-btn">Save CA</button>
     </div>
-    <div class="hint">Once the Version 1 token launches, paste its mint address here — the header chip switches
-    from the placeholder to the real CA with click-to-copy.</div>
+    <div class="hint">The site ships with the Version 1 CA baked in
+    (<span class="mono">EfBGNVKqPgmcgfWVUvsy4TXzd3FaTyMy7S9Jg9zsJxV1</span>). Saving a value here overrides it
+    for this browser; clearing reverts to the built-in.</div>
   </div>
 
   <h2>Launches</h2>
@@ -271,7 +272,7 @@ function saveProjectCa() {
   const ca = $('project-ca').value.trim();
   if (!ca) {
     localStorage.removeItem('v1-project-ca');
-    return say('Project CA cleared — header shows the placeholder.', 'ok');
+    return say('Override cleared — header uses the built-in Version 1 CA.', 'ok');
   }
   let bytes;
   try { bytes = b58decode(ca); } catch { bytes = null; }
