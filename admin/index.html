@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Version 1 — Admin</title>
+<link rel="icon" href="../assets/logo.png">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fafbfa; --border: #e4e7e4; --border-strong: #d0d4d0;
+    --text: #0b0d0b; --muted: #68706a; --faint: #a2a9a3;
+    --ok: #16a34a; --err: #dc2626; --warn: #b45309;
+    --field: #f4f6f4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--text);
+    font: 14px/1.55 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 0 20px 80px; }
+  header { display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand img { width: 34px; height: 34px; }
+  .brand .name { font-weight: 700; font-size: 16px; letter-spacing: -0.02em; }
+  .brand .tag { font-size: 11px; color: var(--muted); display: block; margin-top: -2px; }
+
+  h2 { font-size: 12.5px; font-weight: 600; color: var(--muted); text-transform: uppercase;
+       letter-spacing: .05em; margin: 26px 0 12px; }
+  .card { border: 1px solid var(--border); border-radius: 10px; padding: 16px; background: #ffffff; }
+  label { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted);
+          text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  input { width: 100%; font: inherit; color: var(--text); background: var(--field);
+    border: 1px solid var(--border-strong); border-radius: 8px; padding: 9px 12px; }
+  input:focus { outline: none; border-color: var(--text); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .grid .span2 { grid-column: span 2; }
+  @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } .grid .span2 { grid-column: span 1; } }
+  button { font: inherit; cursor: pointer; border-radius: 8px; padding: 8px 16px;
+    border: 1px solid var(--text); background: var(--text); color: #fff; font-weight: 600; }
+  button:hover { opacity: .85; }
+  button.ghost { background: var(--field); color: var(--text); border-color: var(--border-strong); font-weight: 500; }
+  button.danger { background: var(--field); color: var(--err); border-color: var(--err); font-weight: 500; }
+  button.small { padding: 5px 12px; font-size: 12.5px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+  .kv { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; margin-bottom: 8px; }
+  .kv .k { color: var(--muted); flex: none; }
+  .kv .v { word-break: break-all; text-align: right; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  #admin-status { font-size: 13px; min-height: 18px; margin-top: 10px; }
+  #admin-status.ok { color: var(--ok); } #admin-status.err { color: var(--err); }
+  #admin-status.warn { color: var(--warn); }
+
+  .dump-row { margin-bottom: 8px; }
+  .dump-label { font-size: 11.5px; font-weight: 600; }
+  .dump-hex { font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: var(--muted);
+    word-break: break-all; background: var(--field); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 8px; max-height: 64px; overflow-y: auto; }
+  ul.checks { list-style: none; padding: 0; margin: 10px 0 0;
+    font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; }
+  .check-pass { color: var(--ok); }
+  .check-fail { color: var(--err); }
+
+  #log { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; color: var(--muted);
+         max-height: 280px; overflow-y: auto; }
+  .log-line { white-space: pre-wrap; word-break: break-word; }
+  .log-line.ok { color: var(--ok); } .log-line.err { color: var(--err); } .log-line.warn { color: var(--warn); }
+  .empty { color: var(--faint); font-size: 13px; }
+  footer { margin-top: 40px; font-size: 11.5px; color: var(--faint); text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <img src="../assets/logo.png" alt="Version 1">
+      <div>
+        <span class="name">Version 1 · Admin</span>
+        <span class="tag">operational console · devnet</span>
+      </div>
+    </div>
+    <a href="../">← back to launchpad</a>
+  </header>
+
+  <div id="admin-status"></div>
+
+  <h2>Launch payer</h2>
+  <div class="card">
+    <div class="kv"><span class="k">Address</span><span class="v mono" id="payer-address">…</span></div>
+    <div class="kv"><span class="k">Balance</span><span class="v" id="payer-balance">…</span></div>
+    <div class="row">
+      <button class="small" id="airdrop-btn">Airdrop 1 SOL</button>
+      <button class="ghost small" id="refresh-btn">Refresh</button>
+      <button class="ghost small" id="import-btn">Import key</button>
+      <button class="ghost small" id="export-btn">Export key</button>
+      <button class="danger small" id="rotate-btn">Rotate key</button>
+    </div>
+    <div class="hint">This throwaway keypair signs and pays for every launch on the user page
+    (wallets can't sign SIMD-0385 v1 bytes yet). Devnet only — never fund it with real SOL.
+    If the faucet rate-limits, fund the address at <a href="https://faucet.solana.com" target="_blank">faucet.solana.com</a>.</div>
+  </div>
+
+  <h2>Network &amp; v1 transaction config</h2>
+  <div class="card">
+    <div class="grid">
+      <div class="span2">
+        <label>RPC endpoint</label>
+        <input id="rpc-endpoint" class="mono">
+      </div>
+      <div>
+        <label>Priority fee — total lamports (mask bits 0+1)</label>
+        <input id="priority-fee" type="number" min="0">
+      </div>
+      <div>
+        <label>Compute-unit limit (mask bit 2)</label>
+        <input id="cu-limit" type="number" min="0">
+      </div>
+    </div>
+    <button class="small" id="save-cfg-btn">Save config</button>
+    <div class="hint">Applied to every launch built on the user page. The priority fee uses
+    SIMD-0385 semantics (total lamports via the config mask, not µ-lamports/CU).</div>
+  </div>
+
+  <h2>Launches</h2>
+  <div class="card">
+    <div class="kv"><span class="k">Stored launches</span><span class="v" id="launch-count">0</span></div>
+    <div class="row">
+      <button class="ghost small" id="export-launches-btn">Export JSON</button>
+      <button class="danger small" id="clear-launches-btn">Clear all</button>
+    </div>
+    <div class="hint">Launches live in this browser's localStorage (tokens themselves are on-chain and unaffected).</div>
+  </div>
+
+  <h2>Last built transaction — SIMD-0385 v1</h2>
+  <div class="card" id="last-tx-card">
+    <div class="empty">No transaction built yet.</div>
+  </div>
+
+  <h2>Activity log</h2>
+  <div class="card">
+    <div id="log"><div class="empty">Empty.</div></div>
+    <div class="row" style="margin-top:10px">
+      <button class="ghost small" id="clear-log-btn">Clear log</button>
+    </div>
+  </div>
+
+  <footer>Version 1 admin · state shared with the launchpad via localStorage</footer>
+</div>
+
+<script src="https://unpkg.com/tweetnacl@1.0.3/nacl.min.js"></script>
+<script src="../js/util.js"></script>
+<script src="../js/rpc.js"></script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const LAMPORTS_PER_SOL = 1_000_000_000;
+const WALLET_STORAGE_KEY = 'simd0385-launchpad-secret';
+const LAUNCHES_STORAGE_KEY = 'v1-launches';
+const CFG_STORAGE_KEY = 'v1-cfg';
+const LOG_STORAGE_KEY = 'v1-log';
+const LAST_TX_STORAGE_KEY = 'v1-last-tx';
+
+let wallet = null;
+
+function say(msg, cls = '') {
+  $('admin-status').textContent = msg;
+  $('admin-status').className = cls;
+}
+
+function loadWallet() {
+  const stored = localStorage.getItem(WALLET_STORAGE_KEY);
+  if (stored) {
+    try { wallet = nacl.sign.keyPair.fromSecretKey(b58decode(stored)); } catch { wallet = null; }
+  }
+  if (!wallet) {
+    wallet = nacl.sign.keyPair();
+    localStorage.setItem(WALLET_STORAGE_KEY, b58encode(wallet.secretKey));
+  }
+  $('payer-address').textContent = b58encode(wallet.publicKey);
+  refreshBalance();
+}
+
+async function refreshBalance() {
+  try {
+    const lamports = await RPC.getBalance(b58encode(wallet.publicKey));
+    $('payer-balance').textContent = `${(lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL`;
+  } catch {
+    $('payer-balance').textContent = 'unavailable (RPC rate-limited)';
+  }
+}
+
+async function airdrop() {
+  say('Requesting devnet airdrop …');
+  try {
+    const sig = await RPC.requestAirdrop(b58encode(wallet.publicKey), LAMPORTS_PER_SOL);
+    await RPC.confirmSignature(sig);
+    await refreshBalance();
+    say('Airdrop confirmed.', 'ok');
+  } catch (e) {
+    say(`Airdrop failed (faucet rate-limits often): ${e.message}`, 'warn');
+  }
+}
+
+function importKey() {
+  const input = prompt('Paste a base58-encoded 64-byte secret key (devnet only!):');
+  if (!input) return;
+  try {
+    wallet = nacl.sign.keyPair.fromSecretKey(b58decode(input.trim()));
+    localStorage.setItem(WALLET_STORAGE_KEY, b58encode(wallet.secretKey));
+    loadWallet();
+    say('Payer key imported.', 'ok');
+  } catch (e) {
+    say(`Could not import key: ${e.message}`, 'err');
+  }
+}
+
+function exportKey() {
+  prompt('Session payer secret key (base58, devnet only):', b58encode(wallet.secretKey));
+}
+
+function rotateKey() {
+  if (!confirm('Generate a NEW payer keypair? Any SOL on the current key stays there — export it first if you care.')) return;
+  wallet = nacl.sign.keyPair();
+  localStorage.setItem(WALLET_STORAGE_KEY, b58encode(wallet.secretKey));
+  loadWallet();
+  say('New payer key generated.', 'ok');
+}
+
+// ---- config ----
+function loadCfg() {
+  const cfg = JSON.parse(localStorage.getItem(CFG_STORAGE_KEY) || '{}');
+  $('rpc-endpoint').value = localStorage.getItem('v1-rpc') || RPC.endpoint;
+  $('priority-fee').value = cfg.priorityFee ?? '5000';
+  $('cu-limit').value = cfg.cuLimit ?? '200000';
+}
+
+function saveCfg() {
+  const endpoint = $('rpc-endpoint').value.trim();
+  try { new URL(endpoint); } catch { return say('RPC endpoint is not a valid URL.', 'err'); }
+  localStorage.setItem('v1-rpc', endpoint);
+  RPC.endpoint = endpoint;
+  localStorage.setItem(CFG_STORAGE_KEY, JSON.stringify({
+    priorityFee: String(Math.max(0, parseInt($('priority-fee').value, 10) || 0)),
+    cuLimit: String(Math.max(0, parseInt($('cu-limit').value, 10) || 200000)),
+  }));
+  say('Config saved — applies to the next launch.', 'ok');
+  refreshBalance();
+}
+
+// ---- launches ----
+function renderLaunchCount() {
+  const l = JSON.parse(localStorage.getItem(LAUNCHES_STORAGE_KEY) || '[]');
+  $('launch-count').textContent = l.length;
+}
+
+function exportLaunches() {
+  const data = localStorage.getItem(LAUNCHES_STORAGE_KEY) || '[]';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  a.download = 'version1-launches.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function clearLaunches() {
+  if (!confirm('Remove all launches from this browser\'s list? On-chain tokens are unaffected.')) return;
+  localStorage.setItem(LAUNCHES_STORAGE_KEY, '[]');
+  renderLaunchCount();
+  say('Launch list cleared.', 'ok');
+}
+
+// ---- last tx ----
+function renderLastTx() {
+  const raw = localStorage.getItem(LAST_TX_STORAGE_KEY);
+  const card = $('last-tx-card');
+  if (!raw) return;
+  let tx;
+  try { tx = JSON.parse(raw); } catch { return; }
+  card.innerHTML = '';
+  const meta = document.createElement('div');
+  meta.className = 'hint';
+  meta.style.marginTop = '0';
+  meta.style.marginBottom = '12px';
+  meta.textContent = `${tx.symbol} · ${tx.name} — ${tx.size} bytes · built ${new Date(tx.t).toLocaleString()}` +
+    ` · fee ${tx.config.priorityFeeLamports} lamports · CU ${tx.config.computeUnitLimit ?? 'default'}`;
+  card.appendChild(meta);
+  for (const s of tx.sections) {
+    const row = document.createElement('div');
+    row.className = 'dump-row';
+    const label = document.createElement('div');
+    label.className = 'dump-label';
+    label.textContent = `${s.label} — ${s.hex.length / 2} B`;
+    const hex = document.createElement('div');
+    hex.className = 'dump-hex';
+    hex.textContent = s.hex;
+    row.append(label, hex);
+    card.appendChild(row);
+  }
+  const ul = document.createElement('ul');
+  ul.className = 'checks';
+  for (const c of tx.checks) {
+    const li = document.createElement('li');
+    li.className = c.pass ? 'check-pass' : 'check-fail';
+    li.textContent = `${c.pass ? '✓' : '✗'} ${c.rule}${c.detail ? ` (${c.detail})` : ''}`;
+    ul.appendChild(li);
+  }
+  card.appendChild(ul);
+}
+
+// ---- log ----
+function renderLog() {
+  const lines = JSON.parse(localStorage.getItem(LOG_STORAGE_KEY) || '[]');
+  const el = $('log');
+  el.innerHTML = '';
+  if (!lines.length) {
+    el.innerHTML = '<div class="empty">Empty.</div>';
+    return;
+  }
+  for (const l of lines) {
+    const d = document.createElement('div');
+    d.className = `log-line ${l.cls || ''}`;
+    d.textContent = `${new Date(l.t).toLocaleTimeString()}  ${l.msg}`;
+    el.appendChild(d);
+  }
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() {
+  localStorage.setItem(LOG_STORAGE_KEY, '[]');
+  renderLog();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  $('airdrop-btn').addEventListener('click', airdrop);
+  $('refresh-btn').addEventListener('click', refreshBalance);
+  $('import-btn').addEventListener('click', importKey);
+  $('export-btn').addEventListener('click', exportKey);
+  $('rotate-btn').addEventListener('click', rotateKey);
+  $('save-cfg-btn').addEventListener('click', saveCfg);
+  $('export-launches-btn').addEventListener('click', exportLaunches);
+  $('clear-launches-btn').addEventListener('click', clearLaunches);
+  $('clear-log-btn').addEventListener('click', clearLog);
+
+  loadWallet();
+  loadCfg();
+  renderLaunchCount();
+  renderLastTx();
+  renderLog();
+  // live-follow the user page: storage events fire across tabs, poll as backup
+  window.addEventListener('storage', () => { renderLog(); renderLastTx(); renderLaunchCount(); });
+  setInterval(() => { renderLog(); renderLastTx(); renderLaunchCount(); }, 3000);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Version 1 — Launch tokens on Solana v1</title>
+<link rel="icon" href="assets/logo.png">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fafbfa; --surface: #ffffff; --surface2: #f4f6f4; --raise: #ebeeeb;
+    --border: #e4e7e4; --border-strong: #d0d4d0;
+    --text: #0b0d0b; --muted: #68706a; --faint: #a2a9a3;
+    --lime: #c8f04b; --lime-dark: #b4dd35; --green: #16a34a; --red: #dc2626;
+    --ok: #16a34a; --err: #dc2626; --warn: #b45309;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--text);
+    font: 14px/1.55 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  a:hover { color: var(--text); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 80px; }
+  .hidden { display: none !important; }
+  .mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+
+  /* ============================== top bar ============================== */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; gap: 12px;
+  }
+  .logo-chip { width: 40px; height: 40px; border-radius: 11px; background: #fff; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; flex: none; }
+  .logo-chip img { width: 30px; height: 30px; }
+  .nav-pills { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 999px; padding: 4px; }
+  .nav-pills button {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    background: none; border: none; color: var(--muted);
+    border-radius: 999px; padding: 7px 16px;
+  }
+  .nav-pills button:hover { color: var(--text); }
+  .nav-pills button.on { background: var(--raise); color: var(--text); }
+  .connect {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    background: none; border: 1px solid var(--border-strong); color: var(--text);
+    border-radius: 999px; padding: 8px 18px;
+  }
+  .connect:hover { border-color: var(--faint); }
+
+  /* ============================== hero ============================== */
+  .hero {
+    margin-top: 10px; border-radius: 18px; border: 1px solid var(--border);
+    background:
+      radial-gradient(120% 160% at 15% 0%, rgba(84, 180, 116, .18) 0%, rgba(84, 180, 116, .07) 45%, transparent 75%),
+      var(--surface);
+    padding: 34px 36px 30px; display: flex; justify-content: space-between; gap: 32px;
+    overflow: hidden;
+  }
+  .hero h1 { margin: 0 0 18px; font-size: 27px; line-height: 1.25; letter-spacing: -0.02em; }
+  .hero h1 .dim { color: #1f7a40; }
+  .hero-actions { display: flex; align-items: center; gap: 18px; margin-bottom: 26px; }
+  .cta {
+    font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer;
+    background: var(--lime); color: #0c0e0a; border: none;
+    border-radius: 999px; padding: 10px 18px;
+  }
+  .cta:hover { filter: brightness(1.08); }
+  .hero-actions a { font-size: 13px; color: var(--muted); }
+  .hero-actions a:hover { color: var(--text); }
+  .hero-stats { display: flex; gap: 40px; }
+  .hero-stats b { display: block; font-size: 17px; font-weight: 700; }
+  .hero-stats span { font-size: 11.5px; color: var(--muted); }
+  .hero-right { text-align: right; min-width: 240px; display: flex; flex-direction: column; }
+  .hero-right .hr-label { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+  .hero-right .hr-big { font-size: 24px; font-weight: 700; margin-top: 2px; }
+  .hero-right .hr-sub { font-size: 11.5px; color: var(--green); }
+  .hero-right svg { margin-top: auto; width: 240px; height: 64px; }
+  @media (max-width: 760px) { .hero { flex-direction: column; } .hero-right { text-align: left; } }
+
+  /* ============================== toolbar ============================== */
+  .toolbar { display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; margin: 22px 0 16px; flex-wrap: wrap; }
+  .search { flex: 1; max-width: 300px; position: relative; }
+  .search input {
+    width: 100%; font: inherit; font-size: 13px; color: var(--text);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 9px 16px 9px 34px;
+  }
+  .search::before { content: "⌕"; position: absolute; left: 13px; top: 7px; color: var(--faint); font-size: 15px; }
+  .search input:focus { outline: none; border-color: var(--border-strong); }
+  .pills { display: flex; align-items: center; gap: 2px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
+  .pills .plabel { font-size: 11.5px; color: var(--faint); padding: 0 8px 0 10px; }
+  .pills button { font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    background: none; border: none; color: var(--muted); border-radius: 999px; padding: 6px 13px; }
+  .pills button.on { background: var(--text); color: #fff; }
+
+  /* ============================== coin grid ============================== */
+  .coin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .coin-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 620px) { .coin-grid { grid-template-columns: 1fr; } }
+  .coin-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 16px 12px; cursor: pointer; transition: border-color .12s;
+  }
+  .coin-card:hover { border-color: var(--border-strong); }
+  .cc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .cc-av { width: 34px; height: 34px; border-radius: 50%; object-fit: cover;
+    background: var(--raise); flex: none; border: 1px solid var(--border); }
+  .cc-av.ph { display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: var(--text); }
+  .cc-names { min-width: 0; }
+  .cc-ticker { font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 6px; }
+  .cc-name { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cc-badge { font-size: 9.5px; font-weight: 700; color: var(--muted);
+    border: 1px solid var(--border-strong); border-radius: 999px; padding: 1px 7px; }
+  .cc-badge.v1 { color: #0c0e0a; background: var(--lime); border-color: var(--lime); }
+  .cc-big { font-size: 25px; font-weight: 700; letter-spacing: -0.02em; }
+  .cc-pays { font-size: 11.5px; color: var(--muted); margin: 3px 0 10px; display: flex; align-items: center; gap: 6px; }
+  .cc-pays .q { color: var(--text); font-weight: 600; background: var(--raise);
+    border-radius: 6px; padding: 1px 7px; font-size: 10.5px; }
+  .coin-card svg { width: 100%; height: 46px; display: block; }
+  .cc-flat { height: 46px; display: flex; align-items: center; font-size: 11px; color: var(--faint); }
+  .empty { color: var(--faint); text-align: center; padding: 56px 0; font-size: 13.5px; }
+
+  /* ============================== launch view ============================== */
+  .launch-cols { display: grid; grid-template-columns: 1fr 320px; gap: 18px; margin-top: 14px; align-items: start; }
+  @media (max-width: 860px) { .launch-cols { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .card h2 { margin: 0 0 18px; font-size: 16px; }
+  .lbl { display: block; font-size: 10.5px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .lbl .cnt { float: right; font-weight: 500; color: var(--faint); letter-spacing: 0; }
+  input[type=text], input[type=number], textarea {
+    width: 100%; font: inherit; font-size: 13.5px; color: var(--text); background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; resize: none;
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--border-strong); }
+  ::placeholder { color: var(--faint); }
+  .sect { border-top: 1px solid var(--border); margin-top: 22px; padding-top: 20px; }
+
+  .venues { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .venue {
+    font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; text-align: left;
+    background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .venue.on { border-color: var(--lime); box-shadow: 0 0 0 1px var(--lime) inset; }
+  .venue.off { color: var(--faint); cursor: default; }
+  .venue .soon { margin-left: auto; font-size: 10px; color: var(--faint); font-style: normal;
+    border: 1px solid var(--border); border-radius: 999px; padding: 1px 7px; }
+
+  .img-name-row { display: flex; gap: 16px; margin-bottom: 16px; }
+  .add-image {
+    width: 108px; height: 108px; flex: none; cursor: pointer;
+    border: 1px dashed var(--border-strong); border-radius: 12px; background: var(--surface2);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    color: var(--faint); font-size: 10px; font-weight: 700; letter-spacing: .08em; overflow: hidden;
+  }
+  .add-image:hover { border-color: var(--faint); color: var(--muted); }
+  .add-image img { width: 100%; height: 100%; object-fit: cover; }
+  .add-image .ic { font-size: 20px; font-weight: 400; }
+  .name-fields { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .nt-row { display: grid; grid-template-columns: 1fr 130px; gap: 12px; }
+
+  .seg { display: inline-flex; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 3px; }
+  .seg button { font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    background: none; border: none; color: var(--muted); border-radius: 999px; padding: 6px 14px; }
+  .seg button.on { background: var(--text); color: #fff; }
+  .fb-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .fb-custom { width: 110px; position: relative; }
+  .fb-custom input { text-align: right; padding-right: 40px; border-radius: 999px; }
+  .fb-custom::after { content: "SOL"; position: absolute; right: 13px; top: 10px;
+    font-size: 11px; color: var(--faint); font-weight: 700; }
+  .note { font-size: 12px; color: var(--muted); margin: 10px 0 0; line-height: 1.5; }
+
+  .qtabs { display: inline-flex; gap: 2px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 3px; margin-bottom: 12px; }
+  .qtabs button { font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+    background: none; border: none; color: var(--muted); border-radius: 999px; padding: 5px 13px; }
+  .qtabs button.on { background: var(--text); color: #fff; }
+  .qtabs .n { color: var(--faint); font-weight: 500; margin-left: 4px; }
+  .quote-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 620px) { .quote-grid { grid-template-columns: repeat(2, 1fr); } }
+  .quote-card {
+    font: inherit; text-align: left; cursor: pointer;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 11px;
+    padding: 11px 13px; display: flex; align-items: center; gap: 10px; color: var(--text);
+  }
+  .quote-card:hover { border-color: var(--border-strong); }
+  .quote-card.on { border-color: var(--lime); box-shadow: 0 0 0 1px var(--lime) inset; }
+  .q-ic { width: 28px; height: 28px; border-radius: 50%; background: var(--raise); flex: none;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .q-t { min-width: 0; }
+  .q-sym { font-size: 12.5px; font-weight: 700; }
+  .q-name { font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #ca-row { margin-top: 12px; }
+  .pair-opts { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+  .pair-opts .opt { flex: 1; min-width: 160px; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .check input { accent-color: var(--lime); width: 15px; height: 15px; }
+
+  /* summary sidebar */
+  .side h3 { margin: 0 0 16px; font-size: 15px; }
+  .sum-head { display: flex; align-items: center; gap: 12px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+  .sum-thumb { width: 42px; height: 42px; border-radius: 10px; background: var(--surface2);
+    border: 1px solid var(--border); flex: none; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; color: var(--faint); }
+  .sum-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .sum-title { font-weight: 700; font-size: 14px; }
+  .sum-sub { font-size: 11.5px; color: var(--faint); }
+  .srow { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; margin-bottom: 9px; }
+  .srow .k { color: var(--muted); }
+  .srow .v { font-weight: 600; text-align: right; word-break: break-all; }
+  .ssect { font-size: 10.5px; font-weight: 700; color: var(--faint); text-transform: uppercase;
+    letter-spacing: .08em; margin: 16px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .side .note { font-size: 11.5px; color: var(--faint); }
+  .launch-btn {
+    width: 100%; margin-top: 16px; font: inherit; font-size: 14px; font-weight: 700;
+    letter-spacing: .12em; cursor: pointer; background: var(--lime-dark); color: #0c0e0a;
+    border: none; border-radius: 999px; padding: 12px;
+  }
+  .launch-btn:hover { background: var(--lime); }
+  .launch-btn:disabled { opacity: .45; cursor: default; }
+  #status { font-size: 12.5px; margin-top: 12px; min-height: 18px; }
+  #status.ok { color: var(--ok); } #status.err { color: var(--err); } #status.warn { color: var(--warn); }
+
+  /* ============================== modal ============================== */
+  .modal-bg { position: fixed; inset: 0; background: rgba(10,12,10,.35); z-index: 40;
+    display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; overflow-y: auto; }
+  .modal { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 16px;
+    width: 560px; max-width: 100%; padding: 22px; }
+  .modal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .modal-head .x { margin-left: auto; cursor: pointer; background: none; border: none;
+    color: var(--muted); font-size: 18px; padding: 4px 8px; }
+  .modal-head .x:hover { color: var(--text); }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+  @media (max-width: 560px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--surface2); }
+  .stat .s-label { font-size: 10px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .06em; }
+  .stat .s-value { font-size: 16px; font-weight: 700; margin-top: 2px; }
+  .chart-block { margin-bottom: 16px; }
+  .chart-title { font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  .chart-block svg { display: block; width: 100%; height: auto; }
+  .detail-links { font-size: 12px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
+  .detail-links a { text-decoration: underline; text-underline-offset: 2px; }
+  .loading { color: var(--faint); font-size: 13px; padding: 8px 0; }
+
+  footer { margin-top: 44px; font-size: 11.5px; color: var(--faint); text-align: center; }
+  footer a { text-decoration: underline; text-underline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="topbar">
+    <div class="logo-chip"><img src="assets/logo.png" alt="Version 1"></div>
+    <div class="nav-pills">
+      <button id="nav-explore" class="on">Explore</button>
+      <button id="nav-launch">Launch token</button>
+    </div>
+    <button class="connect" id="connect-btn">Connect</button>
+  </nav>
+
+  <!-- ============================== EXPLORE ============================== -->
+  <section id="view-explore">
+    <div class="hero">
+      <div class="hero-left">
+        <h1>Launch tokens on Solana's<br><span class="dim">v1 transaction format.</span></h1>
+        <div class="hero-actions">
+          <button class="cta" id="hero-launch">+ Launch a token</button>
+          <a href="https://github.com/solana-foundation/solana-improvement-documents/blob/main/proposals/0385-transaction-v1.md" target="_blank">How SIMD-0385 works →</a>
+        </div>
+        <div class="hero-stats">
+          <div><b id="hs-total">0</b><span>Tokens launched</span></div>
+          <div><b id="hs-v1">0</b><span>Landed as v1</span></div>
+          <div><b id="hs-paired">0</b><span>pump.fun pairings</span></div>
+        </div>
+      </div>
+      <div class="hero-right">
+        <span class="hr-label">TRANSACTION FORMAT</span>
+        <div class="hr-big">v1 · byte 129</div>
+        <span class="hr-sub" id="hr-status">live on devnet</span>
+        <svg id="hero-spark" viewBox="0 0 240 64"></svg>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search"><input id="search" placeholder="Search"></div>
+      <div class="pills" id="sort-pills">
+        <span class="plabel">Sort</span>
+        <button data-sort="recent" class="on">Recent</button>
+        <button data-sort="supply">Supply</button>
+        <button data-sort="paired">Paired</button>
+      </div>
+    </div>
+
+    <div class="coin-grid" id="coin-grid"></div>
+    <div class="empty hidden" id="grid-empty">No tokens yet — be the first to launch one.</div>
+  </section>
+
+  <!-- ============================== LAUNCH ============================== -->
+  <section id="view-launch" class="hidden">
+    <div class="launch-cols">
+      <div class="card">
+        <h2>Launch a coin</h2>
+
+        <span class="lbl">Launch on</span>
+        <div class="venues">
+          <button class="venue on"><span>💊</span> Pump</button>
+          <button class="venue off"><span>🌊</span> Meteora <em class="soon">soon</em></button>
+        </div>
+
+        <div class="img-name-row">
+          <div class="add-image" id="img-box"><span class="ic">🖼</span><span>ADD IMAGE</span></div>
+          <input type="file" id="token-image" accept="image/*" class="hidden">
+          <div class="name-fields">
+            <div class="nt-row">
+              <div>
+                <span class="lbl">Name <span class="cnt" id="cnt-name">0/32</span></span>
+                <input type="text" id="token-name" maxlength="32" placeholder="Token name">
+              </div>
+              <div>
+                <span class="lbl">Ticker <span class="cnt" id="cnt-ticker">0/13</span></span>
+                <input type="text" id="token-symbol" maxlength="13" placeholder="SYMBOL">
+              </div>
+            </div>
+            <div>
+              <span class="lbl">Description <span class="cnt" id="cnt-desc">0/150</span></span>
+              <textarea id="token-desc" maxlength="150" rows="2" placeholder="What the coin is, in a line or two."></textarea>
+            </div>
+          </div>
+        </div>
+        <div>
+          <span class="lbl">X <span class="cnt" id="cnt-x">0/80</span></span>
+          <input type="text" id="token-x" maxlength="80" placeholder="x.com/you, or a link to the tweet">
+        </div>
+
+        <div class="sect">
+          <span class="lbl">Your first buy</span>
+          <div class="fb-row">
+            <div class="seg" id="fb-seg">
+              <button data-sol="0" class="on">None</button>
+              <button data-sol="0.5">0.5 SOL</button>
+              <button data-sol="1">1 SOL</button>
+              <button data-sol="2">2 SOL</button>
+              <button data-sol="5">5 SOL</button>
+            </div>
+            <div class="fb-custom"><input type="number" id="fb-custom" min="0" step="0.1" placeholder="0"></div>
+          </div>
+          <p class="note">Paid in the quote asset when the pump.fun pool goes live (mainnet-only). Your intent is
+          recorded on-chain in the launch memo.</p>
+        </div>
+
+        <div class="sect">
+          <span class="lbl">Paired with</span>
+          <div class="qtabs" id="qtabs">
+            <button data-cat="all" class="on">All<span class="n">4</span></button>
+            <button data-cat="crypto">Crypto<span class="n">3</span></button>
+            <button data-cat="custom">Custom</button>
+          </div>
+          <div class="quote-grid" id="quote-grid"></div>
+          <div id="ca-row" class="hidden">
+            <input type="text" id="ca-input" class="mono" placeholder="paste the mint address (CA) of the quote token">
+          </div>
+          <div class="pair-opts">
+            <div class="opt" id="reserve-opt">
+              <span class="lbl">Pool reserve %</span>
+              <input type="number" id="reserve-pct" min="1" max="90" value="20">
+            </div>
+            <label class="check"><input type="checkbox" id="revoke-mint"> Revoke mint authority (fixed supply)</label>
+          </div>
+          <div class="pair-opts">
+            <div class="opt">
+              <span class="lbl">Supply</span>
+              <input type="text" id="token-supply" value="1000000000">
+            </div>
+            <div class="opt">
+              <span class="lbl">Decimals</span>
+              <input type="number" id="token-decimals" min="0" max="9" value="6">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- summary sidebar -->
+      <aside class="card side">
+        <h3>Launch summary</h3>
+        <div class="sum-head">
+          <div class="sum-thumb" id="sum-thumb">🖼</div>
+          <div>
+            <div class="sum-title" id="sum-name">Untitled</div>
+            <div class="sum-sub" id="sum-ticker">No ticker yet</div>
+          </div>
+        </div>
+        <div class="srow"><span class="k">Launching on</span><span class="v">Pump</span></div>
+        <div class="srow"><span class="k">Paired with</span><span class="v" id="sum-quote">Nothing</span></div>
+        <div class="srow"><span class="k">Pool reserve</span><span class="v" id="sum-reserve">—</span></div>
+        <div class="srow"><span class="k">Your first buy</span><span class="v" id="sum-fb">None</span></div>
+        <div class="srow"><span class="k">Mint authority</span><span class="v" id="sum-auth">You keep it</span></div>
+        <div class="ssect">v1 transaction</div>
+        <div class="srow"><span class="k">Wire format</span><span class="v">SIMD-0385 · byte 129</span></div>
+        <div class="srow"><span class="k">Priority fee</span><span class="v" id="sum-fee">5,000 lamports</span></div>
+        <div class="srow"><span class="k">CU limit</span><span class="v" id="sum-cu">200,000</span></div>
+        <div class="srow"><span class="k">Est. size</span><span class="v" id="sum-size">~0.8 KB / 4 KB</span></div>
+        <p class="note">Compute budget travels in the v1 config mask — no ComputeBudget instructions. Signatures sit
+        at the end of the wire bytes and sign everything before them. If an RPC rejects v1, the same instructions
+        are re-sent as a legacy transaction.</p>
+        <button class="launch-btn" id="launch-btn">L a u n c h</button>
+        <div id="status"></div>
+      </aside>
+    </div>
+  </section>
+
+  <footer>
+    Version 1 · SIMD-0385 launchpad · devnet only · <a href="admin/">admin</a>
+  </footer>
+</div>
+
+<!-- coin detail modal -->
+<div class="modal-bg hidden" id="modal-bg">
+  <div class="modal">
+    <div class="modal-head" id="modal-head"></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/tweetnacl@1.0.3/nacl.min.js"></script>
+<script src="js/util.js"></script>
+<script src="js/rpc.js"></script>
+<script src="js/instructions.js"></script>
+<script src="js/tx_v1.js"></script>
+<script src="js/tx_legacy.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
