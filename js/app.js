@@ -107,6 +107,25 @@ function renderConnect() {
   $('connect-btn').textContent = connectedB58 ? short(connectedB58) : 'Connect';
 }
 
+// project token CA chip — placeholder until announced; set it from /admin
+function renderCaPill() {
+  const ca = localStorage.getItem('v1-project-ca');
+  $('ca-pill').textContent = ca ? `CA · ${short(ca, 4)}` : 'CA · soon';
+}
+
+async function copyCa() {
+  const ca = localStorage.getItem('v1-project-ca');
+  const pill = $('ca-pill');
+  if (!ca) {
+    pill.textContent = 'CA · not announced yet';
+    setTimeout(renderCaPill, 1600);
+    return;
+  }
+  try { await navigator.clipboard.writeText(ca); pill.textContent = 'CA · copied ✓'; }
+  catch { pill.textContent = `CA · ${short(ca, 6)}`; }
+  setTimeout(renderCaPill, 1600);
+}
+
 async function toggleConnect() {
   const provider = getProvider();
   if (connectedB58) {
@@ -691,6 +710,7 @@ window.addEventListener('DOMContentLoaded', () => {
   $('nav-launch').addEventListener('click', () => switchView('launch'));
   $('hero-launch').addEventListener('click', () => switchView('launch'));
   $('connect-btn').addEventListener('click', toggleConnect);
+  $('ca-pill').addEventListener('click', copyCa);
   $('launch-btn').addEventListener('click', launchToken);
   $('modal-bg').addEventListener('click', e => { if (e.target === $('modal-bg')) closeModal(); });
 
@@ -748,6 +768,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   loadOrCreateWallet();
   renderConnect();
+  renderCaPill();
   renderQuoteGrid('all');
   updateCounters();
   updateSummary();

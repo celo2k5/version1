@@ -125,6 +125,17 @@
     SIMD-0385 semantics (total lamports via the config mask, not µ-lamports/CU).</div>
   </div>
 
+  <h2>Project token</h2>
+  <div class="card">
+    <label>Contract address (CA) — shown in the site header</label>
+    <input id="project-ca" class="mono" placeholder="leave empty for the “CA · soon” placeholder">
+    <div class="row" style="margin-top:10px">
+      <button class="small" id="save-ca-btn">Save CA</button>
+    </div>
+    <div class="hint">Once the Version 1 token launches, paste its mint address here — the header chip switches
+    from the placeholder to the real CA with click-to-copy.</div>
+  </div>
+
   <h2>Launches</h2>
   <div class="card">
     <div class="kv"><span class="k">Stored launches</span><span class="v" id="launch-count">0</span></div>
@@ -251,6 +262,24 @@ function saveCfg() {
   refreshBalance();
 }
 
+// ---- project token CA ----
+function loadProjectCa() {
+  $('project-ca').value = localStorage.getItem('v1-project-ca') || '';
+}
+
+function saveProjectCa() {
+  const ca = $('project-ca').value.trim();
+  if (!ca) {
+    localStorage.removeItem('v1-project-ca');
+    return say('Project CA cleared — header shows the placeholder.', 'ok');
+  }
+  let bytes;
+  try { bytes = b58decode(ca); } catch { bytes = null; }
+  if (!bytes || bytes.length !== 32) return say('That is not a valid mint address.', 'err');
+  localStorage.setItem('v1-project-ca', ca);
+  say('Project CA saved — live in the site header.', 'ok');
+}
+
 // ---- launches ----
 function renderLaunchCount() {
   const l = JSON.parse(localStorage.getItem(LAUNCHES_STORAGE_KEY) || '[]');
@@ -341,12 +370,14 @@ window.addEventListener('DOMContentLoaded', () => {
   $('export-btn').addEventListener('click', exportKey);
   $('rotate-btn').addEventListener('click', rotateKey);
   $('save-cfg-btn').addEventListener('click', saveCfg);
+  $('save-ca-btn').addEventListener('click', saveProjectCa);
   $('export-launches-btn').addEventListener('click', exportLaunches);
   $('clear-launches-btn').addEventListener('click', clearLaunches);
   $('clear-log-btn').addEventListener('click', clearLog);
 
   loadWallet();
   loadCfg();
+  loadProjectCa();
   renderLaunchCount();
   renderLastTx();
   renderLog();
